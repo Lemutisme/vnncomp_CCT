@@ -82,16 +82,16 @@ runtime:
 - `[100,1000]` seconds
 - timeout
 
-For each model, the generator samples `10` properties:
+For each model, the generator samples `50` properties:
 
-- 2 from `[0,10]`
-- 2 from `[10,100]`
-- 3 from `[100,1000]`
-- 3 from timeout
+- 10 from `[0,10]`
+- 10 from `[10,100]`
+- 15 from `[100,1000]`
+- 15 from timeout
 
-This yields `60` total benchmark instances. If a bin has fewer properties than
+This yields `300` total benchmark instances. If a bin has fewer properties than
 requested for a model, sampling is performed with replacement and recorded in
-the metadata. The generated CSV timeout budget is capped at 6 hours exactly:
+the metadata. The generated CSV timeout budget is capped at 30 hours exactly:
 
 - `[0,10]`: `30` seconds
 - `[10,100]`: `120` seconds
@@ -99,7 +99,7 @@ the metadata. The generated CSV timeout budget is capped at 6 hours exactly:
 - timeout: `550` seconds
 
 Total timeout budget:
-`12 * 30 + 12 * 120 + 18 * 550 + 18 * 550 = 21,600` seconds.
+`60 * 30 + 60 * 120 + 90 * 550 + 90 * 550 = 108,000` seconds.
 
 The generated VNN-LIB files encode standard local robustness. Inputs are
 normalized test images, perturbations are channelwise normalized by the dataset

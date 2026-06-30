@@ -40,10 +40,10 @@ TINY_STD = torch.tensor([0.2302, 0.2265, 0.2262], dtype=torch.float32).view(3, 1
 
 BIN_COUNTS = OrderedDict(
     [
-        ("0_10", 2),
-        ("10_100", 2),
-        ("100_1000", 3),
-        ("timeout", 3),
+        ("0_10", 10),
+        ("10_100", 10),
+        ("100_1000", 15),
+        ("timeout", 15),
     ]
 )
 BIN_TIMEOUTS = {
@@ -52,7 +52,6 @@ BIN_TIMEOUTS = {
     "100_1000": 550,
     "timeout": 550,
 }
-EXPECTED_TOTAL_TIMEOUT = 21_600
 METADATA_PATH = SCRIPT_DIR / "metadata" / "sampled_instances.json"
 EXPECTED_ONNX_FILES = [
     "cifar10_eps2_cnn7.onnx",
@@ -507,15 +506,20 @@ InstanceLike = Union[SampledInstance, Dict[str, Any]]
 
 
 def validate_instances(sampled: List[InstanceLike]) -> None:
-    if len(sampled) != 60:
-        raise AssertionError(f"Expected 60 sampled instances, got {len(sampled)}")
+    expected_per_model = sum(BIN_COUNTS.values())
+    expected_total = len(MODEL_SPECS) * expected_per_model
+    if len(sampled) != expected_total:
+        raise AssertionError(f"Expected {expected_total} sampled instances, got {len(sampled)}")
     total_timeout = sum(get_item(item, "timeout") for item in sampled)
-    if total_timeout != EXPECTED_TOTAL_TIMEOUT:
-        raise AssertionError(f"Expected timeout sum {EXPECTED_TOTAL_TIMEOUT}, got {total_timeout}")
+    expected_timeout = len(MODEL_SPECS) * sum(
+        BIN_TIMEOUTS[bin_name] * count for bin_name, count in BIN_COUNTS.items()
+    )
+    if total_timeout != expected_timeout:
+        raise AssertionError(f"Expected timeout sum {expected_timeout}, got {total_timeout}")
     for spec in MODEL_SPECS:
         rows = [item for item in sampled if get_item(item, "model_key") == spec.key]
-        if len(rows) != 10:
-            raise AssertionError(f"{spec.key} expected 10 instances, got {len(rows)}")
+        if len(rows) != expected_per_model:
+            raise AssertionError(f"{spec.key} expected {expected_per_model} instances, got {len(rows)}")
         for bin_name, count in BIN_COUNTS.items():
             found = sum(1 for item in rows if get_item(item, "bin") == bin_name)
             if found != count:
